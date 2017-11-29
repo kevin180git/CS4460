@@ -1,3 +1,11 @@
+function onYearChanged() {
+    var select = d3.select('#yearSelect').node();
+    // Get current value of select element
+    var year = select.options[select.selectedIndex].value;
+    // Update chart with the selected category of letters
+    updateChart(year);
+}
+
 var svg = d3.select('svg');
 
 var svgWidth = +svg.attr('width');
