@@ -1,9 +1,20 @@
+selectedYear = 2010;
+selectedGenre = "All Genres";
+
 function onYearChanged() {
     var select = d3.select('#yearSelect').node();
     // Get current value of select element
-    var year = select.options[select.selectedIndex].value;
+    selectedYear = select.options[select.selectedIndex].value;
     // Update chart with the selected category of letters
-    updateChart(year);
+    updateChart(selectedYear,selectedGenre);
+}
+
+function onGenreChanged() {
+    var select = d3.select('#genreSelect').node();
+    // Get current value of select element
+    selectedGenre = select.options[select.selectedIndex].value;
+    // Update chart with the selected category of letters
+    updateChart(selectedYear, selectedGenre);
 }
 
 var svg = d3.select('svg');
@@ -95,17 +106,44 @@ d3.csv('./data/movies.csv',
                 .tickSizeInner(-chartWidth)
                 .tickFormat(d3.format(".1f")));
 
-        updateChart(2016);
+        updateChart(selectedYear,selectedGenre);
+        getAllGenres();
+        //updateChartG("All Genres");
 
     });
 
-function updateChart(year) {
+function getAllGenres() {
+    nestByGenres = d3.nest()
+            .key(function(d) { return d.genres})
+            .entries(datum);
+
+    diffGenres = [];
+
+    for(i in nestByGenres) { //i is index
+        var arrGenre = nestByGenres[i].key.split("|");
+        for (j in arrGenre) {
+            if (!diffGenres.includes(arrGenre[j])) {
+                diffGenres.push(arrGenre[j]);
+            }
+        }
+    }
+    console.log(diffGenres);
+
+}
+
+function updateChart(year, genre) {
     var filteredYears = datum.filter(function(d){
+        if (year == "All") {return true;}
         return year == d.year;
     });
 
+    var filteredYearAndGenres = filteredYears.filter(function(d){
+        if (genre == "All Genres") {return true;}
+        return d.genres.includes(genre);
+    });
+
     var bChart = bubbleChart.selectAll('.bChart')
-        .data(filteredYears, function(d) { return d.movieTitle});
+        .data(filteredYearAndGenres, function(d) { return d.movieTitle});
 
     var bChartEnter = bChart.enter()
         .append('g')
@@ -125,7 +163,7 @@ function updateChart(year) {
         })
         .style('fill', function(d){
             if (d.contentRating.includes("TV")) {
-                console.log(d.contentRating);
+                //console.log(d.contentRating);
                 return '#b42695';
             } else if (d.contentRating === "G") {
                 return '#ccff99';
@@ -150,14 +188,5 @@ function updateChart(year) {
                 return d.movieTitle;
             });
     bChart.exit().remove();
-
-
-
-
-
-
-
-
-
 
 }

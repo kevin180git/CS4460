@@ -28,3 +28,7 @@
 .bChart:hover text {
     visibility: visible;
 }
+
+#dropDown {
+    font-family: Verdana;
+}
