@@ -22,13 +22,30 @@ var svg = d3.select('svg');
 var svgWidth = +svg.attr('width');
 var svgHeight = +svg.attr('height');
 
-var padding = {t: 60, r: 300, b: 40, l: 40};
+var padding = {t: 60, r: 40, b: 40, l: 40};
+
+var chartWidth = svgWidth/2;
+var chartHeight = svgHeight - padding.t - padding.b;
+
+var histogramWidth = chartWidth - padding.l;
+var histogramHeight = chartHeight;
+
+var domains = { 'imdb' : [0.0, 10.0] };
 
 var bubbleChart = svg.append('g')
+    .attr('class', 'bubblechart')
     .attr('transform', 'translate('+[padding.l, padding.t]+')');
 
-var chartWidth = svgWidth - padding.l - padding.r;
-var chartHeight = svgHeight - padding.t - padding.b;
+var histogramChart = svg.append('g')
+    .attr('class', 'histogram')
+    .attr('transform', 'translate('+[chartWidth + padding.l, padding.t]+')');
+
+
+var genres = [];
+
+var xScale;
+var yScale = d3.scaleLinear().range([chartHeight,0]).domain(domains['imdb']);
+var rScale = d3.scaleSqrt().range([0,40]);
 
 d3.csv('./data/movies.csv',
     function(d){
@@ -74,65 +91,41 @@ d3.csv('./data/movies.csv',
         }
 
         //Global
-        datum = dataset
+        movies = dataset
 
         nestByMovieTitle = d3.nest()
             .key(function(d) { return d.movieTitle})
             .entries(dataset);
 
-        console.log(nestByMovieTitle)
-        //console.log(nestByMovieTitle[1112]) //Avengers
-
-        var xExtent = d3.extent(dataset, function(d){ return d.movieLikes; });
-        xScale = d3.scaleLinear().domain(xExtent).range([0, chartWidth]);
-
-        var yExtent = d3.extent(dataset, function(d){ return d.imdbScore; });
-        yScale = d3.scaleLinear().domain(yExtent).range([chartHeight,0]);
-
-        var rExtent = d3.extent(dataset, function(d){ return d.gross; });
-        rScale = d3.scaleSqrt().domain(rExtent).range([0,100]);
-
-        var xGrid = svg.append('g')
-            .attr('class', 'xGrid')
-            .attr('transform', 'translate('+[padding.l, svgHeight - padding.b]+')')
-            .call(d3.axisBottom(xScale).ticks(8)
-                .tickSizeInner(-chartHeight)
-                .tickFormat(d3.format(".1r")));
-
-        var yGrid = svg.append('g')
-            .attr('class', 'yGrid')
-            .attr('transform', 'translate('+[padding.l, padding.t]+')')
-            .call(d3.axisLeft(yScale).ticks(6)
-                .tickSizeInner(-chartWidth)
-                .tickFormat(d3.format(".1f")));
-
         updateChart(selectedYear,selectedGenre);
-        getAllGenres();
+        getAllGenres(dataset);
+        makeHistogram();
         //updateChartG("All Genres");
 
     });
 
-function getAllGenres() {
-    nestByGenres = d3.nest()
-            .key(function(d) { return d.genres})
-            .entries(datum);
+function getAllGenres(dataset) {
+    var set = new Set()
+    dataset.forEach(function(d) {
+        var temp = d['genres'].split('|');
+        temp.forEach(function(v) {
+            set.add(v);
+        })
+    })
 
-    diffGenres = [];
+    var sorted = Array.from(set).sort();
 
-    for(i in nestByGenres) { //i is index
-        var arrGenre = nestByGenres[i].key.split("|");
-        for (j in arrGenre) {
-            if (!diffGenres.includes(arrGenre[j])) {
-                diffGenres.push(arrGenre[j]);
-            }
-        }
-    }
-    console.log(diffGenres);
+    genreSelect = d3.select('#genreSelect');
+    genreOptions = genreSelect.selectAll('option')
+        .data(sorted)
+        .enter()
+        .append('option')
+        .text(function (d) { return d; })
 
 }
 
 function updateChart(year, genre) {
-    var filteredYears = datum.filter(function(d){
+    var filteredYears = movies.filter(function(d){
         if (year == "All") {return true;}
         return year == d.year;
     });
@@ -141,6 +134,30 @@ function updateChart(year, genre) {
         if (genre == "All Genres") {return true;}
         return d.genres.includes(genre);
     });
+
+    var maxLikes = d3.max(filteredYearAndGenres, function(d){ 
+        return d.movieLikes; 
+    });
+
+    xScale = d3.scaleLinear()
+        .domain([0, maxLikes*1.2])
+        .range([0, chartWidth-padding.l]);
+
+    var rExtent = d3.extent(movies, function(d){ return d.gross; });
+    rScale.domain(rExtent);
+
+    var xGrid = bubbleChart.append('g')
+        .attr('class', 'xGrid')
+        .attr('transform', 'translate('+[0, chartHeight]+')')
+        .call(d3.axisBottom(xScale).ticks(8)
+            .tickSizeInner(-chartHeight)
+            .tickFormat(d3.format("s")));
+
+    var yGrid = bubbleChart.append('g')
+    .attr('class', 'yGrid')
+        .call(d3.axisLeft(yScale).ticks(10)
+        .tickSizeInner(-chartWidth+padding.l)
+        .tickFormat(d3.format(".1f")));
 
     var bChart = bubbleChart.selectAll('.bChart')
         .data(filteredYearAndGenres, function(d) { return d.movieTitle});
@@ -163,7 +180,7 @@ function updateChart(year, genre) {
         })
         .style('fill', function(d){
             if (d.contentRating.includes("TV")) {
-                //console.log(d.contentRating);
+                console.log(d.contentRating);
                 return '#b42695';
             } else if (d.contentRating === "G") {
                 return '#ccff99';
@@ -188,5 +205,57 @@ function updateChart(year, genre) {
                 return d.movieTitle;
             });
     bChart.exit().remove();
+}
 
+function makeHistogram() {
+    var hScale = d3.scaleLinear().domain(domains['imdb']).range([histogramHeight, 0]);
+
+    var histogram = d3.histogram()
+        .domain(hScale.domain())
+        .thresholds(hScale.ticks(40))
+        .value(function(d) {
+            return d['imdbScore'];
+        });
+
+    var bins = histogram(movies)
+
+    xScale.domain([0, 130]).range([0, histogramWidth/2])
+
+    var xAxis = histogramChart.append('g')
+        .attr('class', 'histogram x axis')
+        .attr('transform', 'translate('+[0, histogramHeight]+')')
+        .call(d3.axisBottom(xScale));
+
+    var yAxis = histogramChart.append('g')
+        .attr('class', 'histogram y axis')
+        .call(d3.axisLeft(hScale));
+
+    var binContainer = histogramChart.selectAll('.bin')
+        .data(bins);
+
+    var binContainerEnter = binContainer.enter()
+        .append('g')
+        .attr('class', 'bin')
+
+    binContainer.merge(binContainerEnter)
+        .attr('transform', function(d) {
+            return 'translate(' +[0, hScale(d['x0'])]+ ')';
+        });
+
+    var blocks = binContainerEnter.selectAll('.block')
+        .data(function(d) {
+            return d.map(function(v) {
+                return v;
+            })
+        })
+
+    var blockEnter = blocks.enter()
+        .append('rect')
+        .attr('class', 'block')
+        .attr('width', 1.5)
+        .attr('height', 10)
+        .attr('x', function(d, i) {
+            return xScale(i)+1.5;
+        })
+            
 }
