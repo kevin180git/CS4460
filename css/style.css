@@ -56,3 +56,11 @@
 .bData.hovered image {
     visibility: visible;
 }*/
+
+.block.filtered {
+    fill: orange;
+}
+
+.dot.hidden {
+    opacity: 0.1; 
+}

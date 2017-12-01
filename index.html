@@ -10,7 +10,7 @@
         <svg width="1400" height="1000" style="border: 1px solid #777;">
         </svg>
 
-        <div id = "dropDown">
+        <div id="dropDown">
             <label for="yearSelect">Title Year: </label>
             <select class="custom-select" id="yearSelect" onchange="onYearChanged()">
               <option selected value="2010">2010</option>
@@ -21,14 +21,18 @@
               <option value="2015">2015</option>
               <option value="2016">2016</option>
               <option value="All">All</option>
-
             </select>
 
             <label for="genreSelect">Genres: </label>
             <select class="custom-select" id="genreSelect" onchange="onGenreChanged()">
               <option selected value="All Genres">All Genres</option>
-
             </select>
+        </div>
+
+        <div id="searchbar">
+            <input type="text" id="searchInput" placeholder="Enter a movie title">
+            <button id="searchButton" type="button" onclick="search()" >Search</button>
+            <button id="clearButton" type="button" onclick="clearSearch()" >Clear</button>
         </div>
     </div>
 </body>

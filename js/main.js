@@ -1,20 +1,30 @@
 selectedYear = 2010;
 selectedGenre = "All Genres";
 
+function search(){
+    var text = d3.select('#searchInput').node().value;
+    updateChart(selectedYear, selectedGenre, text);
+    makeTrellis(selectedYear, selectedGenre, text);   
+}
+
+function clearSearch() {
+    d3.select('#searchInput').node().value = "";
+    updateChart(selectedYear, selectedGenre, '/');
+    makeTrellis(selectedYear, selectedGenre, '/');  
+}
+
 function onYearChanged() {
     var select = d3.select('#yearSelect').node();
-    // Get current value of select element
     selectedYear = select.options[select.selectedIndex].value;
-    // Update chart with the selected category of letters
-    updateChart(selectedYear,selectedGenre);
+    updateChart(selectedYear,selectedGenre, '/');
+    makeTrellis(selectedYear, selectedGenre, '/');
 }
 
 function onGenreChanged() {
     var select = d3.select('#genreSelect').node();
-    // Get current value of select element
     selectedGenre = select.options[select.selectedIndex].value;
-    // Update chart with the selected category of letters
-    updateChart(selectedYear, selectedGenre);
+    updateChart(selectedYear, selectedGenre, '/');
+    makeTrellis(selectedYear, selectedGenre, '/');
 }
 
 var xAttributes = ['budget', 'duration', 'directFbLikes', 'castTotalLikes'];
@@ -34,13 +44,13 @@ Cell.prototype.init = function(g) {
         .attr('transform', 'translate(' +[0, trellisHeight]+ ')')
         .call(d3.axisBottom(xScale));
 
-     var yAxis = cell.append('g')
+    var yAxis = cell.append('g')
         .attr('class', 'trellis axis y')
         .call(d3.axisLeft(grossScale).tickFormat(d3.format(".2s")));
 
 }
 
-Cell.prototype.update = function(g) {
+Cell.prototype.update = function(g, dataset) {
     var cell = d3.select(g);
 
     var _this = this;
@@ -48,7 +58,9 @@ Cell.prototype.update = function(g) {
     var gross = this.y;
 
     var dots = cell.selectAll('.dot')
-        .data(movies);
+        .data(dataset);
+
+    console.log(dataset)
 
     var dotsEnter = dots.enter()
         .append('circle')
@@ -56,6 +68,8 @@ Cell.prototype.update = function(g) {
         .attr('r', 2);
 
     dots.merge(dotsEnter)
+        .transition()
+        .duration(600)
         .attr('cx', function(d) {
             
             return xScale(d[attribute]);
@@ -64,6 +78,7 @@ Cell.prototype.update = function(g) {
             return grossScale(d[gross]);
         })
 
+    dots.exit().remove()
 
 }
 
@@ -113,7 +128,7 @@ var contentRatingArr = [['G','#00ff00'],['PG','#0d66ba'],['PG-13','#ec973c'],['R
 
 var genres = [];
 
-var xScale;
+var xScale = d3.scaleLinear()
 var yScale = d3.scaleLinear().range([chartHeight,0]).domain(domains['imdb']);
 var rScale = d3.scaleSqrt().range([0,40]);
 var grossScale = d3.scaleLinear().range([trellisHeight, 0])
@@ -162,7 +177,10 @@ d3.csv('./data/movies.csv',
         }
 
         //Global
-        movies = dataset
+        movies = dataset.filter(function(d){
+            return !(d.contentRating.includes("TV"));
+        });
+
 
         grossExtent = d3.extent(dataset, function(d){ return d.gross; });
         budgetExtent = d3.extent(dataset, function(d) { return d.budget; });
@@ -181,11 +199,11 @@ d3.csv('./data/movies.csv',
             .key(function(d) { return d.movieTitle})
             .entries(dataset);
 
-        updateChart(selectedYear, selectedGenre);
-        getAllGenres(dataset);
         makeHistogram();
+        updateChart(selectedYear, selectedGenre, '/');
+        getAllGenres(dataset);
         addLegend(legendColors, legendWords);
-        makeTrellis();
+        makeTrellis(selectedYear, selectedGenre, '/');
 
     });
 
@@ -297,28 +315,54 @@ function getAllGenres(dataset) {
 
 }
 
-function updateChart(year, genre) {
-    var filterOutTV = movies.filter(function(d){
-        return !(d.contentRating.includes("TV"));
-    }); //we just want to look at movies
+function updateChart(year, genre, text) {
+    var filtered;
 
-    var filteredYears = filterOutTV.filter(function(d){
-        if (year == "All") {return true;}
-        return year == d.year;
-    });
+    if(text != '/') {
+        filtered = movies.filter(function(d) {
+            var title = d['movieTitle'].toLowerCase();
+            return title.includes(text.toLowerCase());
+        })
+    } else {
+        var filteredYears = movies.filter(function(d){
+            if (year == "All") {return true;}
+            return year == d.year;
+        });
 
-    var filteredYearAndGenres = filteredYears.filter(function(d){
-        if (genre == "All Genres") {return true;}
-        return d.genres.includes(genre);
-    });
+        var filteredYearAndGenres = filteredYears.filter(function(d){
+            if (genre == "All Genres") {return true;}
+            return d.genres.includes(genre);
+        });
+        filtered = filteredYearAndGenres;
+    }
+   
 
-    var maxLikes = d3.max(filteredYearAndGenres, function(d){
+    var dot = svg.selectAll('.block')
+        .classed('filtered', function(d) {
+            var yearFilter;
+            var genreFilter;
+
+            if(year == "All") {
+                yearFilter = true;
+            } else {
+                yearFilter = year == d.year;
+            }
+
+            if (genre == "All Genres") {
+                genreFilter = true;
+            } else {
+                genreFilter = d.genres.includes(genre);
+            }
+            return yearFilter && genreFilter;
+        })
+
+    
+
+    var maxLikes = d3.max(filtered, function(d){
         return d.movieLikes;
     });
 
-    xScale = d3.scaleLinear()
-        .domain([0, maxLikes*1.2])
-        .range([0, chartWidth-padding.l]);
+    xScale.domain([0, maxLikes*1.2]).range([0, chartWidth-padding.l]);
 
     rScale.domain(grossExtent);
 
@@ -337,7 +381,7 @@ function updateChart(year, genre) {
 
 
     var bChart = bubbleChart.selectAll('.bChart')
-        .data(filteredYearAndGenres, function(d) { return d.movieTitle});
+        .data(filtered, function(d) { return d.movieTitle});
 
     var bChartEnter = bChart.enter()
         .append('g')
@@ -346,9 +390,14 @@ function updateChart(year, genre) {
             //flag = true;
             console.log(flag);
 
+            svg.selectAll('.dot')
+                .classed('hidden', function(v) {
+                    return v != d;
+                })
+
             bubbleChart.selectAll('image').remove();
             flag = true;
-                loadDoc(d.movieTitle, d.imdbLink).then((ans) => {
+            loadDoc(d.movieTitle, d.imdbLink).then((ans) => {
                 bubbleChart.append('svg:image')
                 .attr('class', 'image')
                 .attr('transform','translate(' + (chartWidth-50) + ','+chartHeight/2+')')
@@ -516,9 +565,26 @@ function makeHistogram() {
 }
 
 
-function makeTrellis() {
+function makeTrellis(year, genre, text) {
+    if(text != '/') {
+        filtered = movies.filter(function(d) {
+            var title = d['movieTitle'].toLowerCase();
+            return title.includes(text.toLowerCase());
+        })
+    } else {
+        var filteredYears = movies.filter(function(d){
+            if (year == "All") {return true;}
+            return year == d.year;
+        });
 
-     var charts = trellis.selectAll('.cell')
+        var filteredYearAndGenres = filteredYears.filter(function(d){
+            if (genre == "All Genres") {return true;}
+            return d.genres.includes(genre);
+        });
+        filtered = filteredYearAndGenres;
+    }
+
+    var charts = trellis.selectAll('.cell')
         .data(cells)
         .enter()
         .append('g')
@@ -527,9 +593,60 @@ function makeTrellis() {
             return 'translate(' +[1.2 * trellisWidth * i]+ ')';
         });
 
+    xAttributes.forEach(function(attribute, i) {
+
+        var cell = trellis.append('g')
+            .attr('class', 'cell')
+            .attr("transform", function(d) {
+                return 'translate(' +[1.2 * trellisWidth * i]+ ')';
+            });
+
+        /*trellis.append('rect')
+            .attr('width', trellisWidth)
+            .attr('height', trellisHeight)
+            .attr("transform", function(d) {
+                return 'translate(' +[1.2 * trellisWidth * i]+ ')';
+            });*/
+
+        xScale.range([0, trellisWidth]).domain(extentMap[attribute]);
+
+        var xAxis = cell.append('g')
+            .attr('class', 'trellis axis x')
+            .attr('transform', 'translate(' +[0, trellisHeight]+ ')')
+            .call(d3.axisBottom(xScale));
+
+        var yAxis = cell.append('g')
+            .attr('class', 'trellis axis y')
+            .call(d3.axisLeft(grossScale).tickFormat(d3.format(".2s")));
+
+        var dots = cell.selectAll('.dot')
+            .data(filtered);
+
+        var dotsEnter = dots.enter()
+            .append('circle')
+            .attr('class', 'dot')
+            .attr('r', 2);
+
+        dots.merge(dotsEnter)
+            .transition()
+            .duration(600)
+            .attr('cx', function(d) {
+                
+                return xScale(d[attribute]);
+            })
+            .attr('cy', function(d) {
+                return grossScale(d['gross']);
+            })
+
+        dots.exit().remove();
+
+        })
+
+    /*console.log(charts)
     charts.each(function(cell) {
+        console.log('yy')
         cell.init(this);
-        cell.update(this);
-    })
+        cell.update(this, filteredYearAndGenres);
+    })*/
    
 }
