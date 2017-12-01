@@ -32,3 +32,27 @@
 #dropDown {
     font-family: Verdana;
 }
+
+.legend text {
+    font-family: Verdana;
+}
+
+.bData text {
+    font-size: 12px;
+    font-family: Verdana;
+    visibility: hidden;
+    text-anchor: middle;
+}
+
+
+.bData.hovered text {
+    visibility: visible;
+}
+
+.bData image {
+    visibility: hidden;
+}
+
+.bData.hovered image {
+    visibility: visible;
+}

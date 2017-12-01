@@ -22,7 +22,7 @@ var svg = d3.select('svg');
 var svgWidth = +svg.attr('width');
 var svgHeight = +svg.attr('height');
 
-var padding = {t: 60, r: 40, b: 40, l: 40};
+var padding = {t: 50, r: 40, b: 40, l: 60};
 
 var chartWidth = svgWidth/2;
 var chartHeight = svgHeight - padding.t - padding.b;
@@ -38,8 +38,11 @@ var bubbleChart = svg.append('g')
 
 var histogramChart = svg.append('g')
     .attr('class', 'histogram')
-    .attr('transform', 'translate('+[chartWidth + padding.l, padding.t]+')');
+    .attr('transform', 'translate('+[chartWidth + padding.l + 200, padding.t]+')');
 
+var legendColors = ['#00ff00','#ffff66','#ec973c','#ff0000','#b42695', '#232323'];
+var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
+var contentRatingArr = [['G','#00ff00'],['PG','#ffff66'],['PG-13','#ec973c'],['R','#ff0000'],['Unrated','#b42695'],['Not Rated','#232323']];
 
 var genres = [];
 
@@ -97,12 +100,82 @@ d3.csv('./data/movies.csv',
             .key(function(d) { return d.movieTitle})
             .entries(dataset);
 
+
         updateChart(selectedYear,selectedGenre);
         getAllGenres(dataset);
         makeHistogram();
+        addLegend(legendColors, legendWords);
         //updateChartG("All Genres");
 
     });
+
+function addLegend(legendColors, legendWords) {
+    var legend = bubbleChart.selectAll('.legend')
+    .data([1])
+    .enter()
+    .append('g')
+    .attr('class', 'legend')
+    .attr('transform', 'translate('+[chartWidth - 250, chartHeight - 200]+')');
+
+    legend.append('rect')
+        .attr('x', 0)
+        .attr('y', -30)
+        .attr('height', 170)
+        .attr('width', 110)
+        .style('fill', '#eee')
+        .style('opacity', '0.8');
+
+    legend.append('text')
+            .attr('x', 0)
+            .attr('y', -20)
+            .attr('dy', '0.7em')
+            .attr('transform', function(a,b) {
+                return 'translate( '+ [10, 0]+ ')';})
+            .text('Color based on')
+            .style('font-size', '0.7em')
+            .style('text-anchor', 'start');
+    legend.append('text')
+        .attr('x', 0)
+        .attr('y', -20)
+        .attr('dy', '0.7em')
+        .attr('transform', function(a,b) {
+            return 'translate( '+ [10, 15]+ ')';})
+        .text('Content Rating')
+        .style('font-size', '0.7em')
+        .style('text-anchor', 'start');
+
+    legendColors.forEach(function(d) {
+        var legendItems = legend.selectAll('.legendItems')
+            .data(legendColors);
+
+        var legendItemsEnter = legendItems.enter()
+        .append('g')
+        .attr('class', 'legendItems');
+
+        legendItemsEnter.append('rect')
+            .attr('x', 20)
+            .attr('y', 10)
+            .attr('height', 15)
+            .attr('width', 15)
+            .attr('transform', function(a,b) {
+                return 'translate( '+ [0, b*15 + 10]+ ')';})
+            .style('fill', function(d) {return d;})
+            .style('opacity', '0.7');
+
+        legendItemsEnter.append('text')
+            .attr('x', 40)
+            .attr('y', 20)
+            .attr('dy', '0.7em')
+            .attr('transform', function(a,b) {
+                return 'translate( '+ [0, b*15 + 3]+ ')';})
+            .text(function(d,i) {
+                return legendWords[i];
+            })
+            .style('font-size', '0.7em')
+            .style('text-anchor', 'start');
+
+    })
+}
 
 function getAllGenres(dataset) {
     var set = new Set()
@@ -125,7 +198,11 @@ function getAllGenres(dataset) {
 }
 
 function updateChart(year, genre) {
-    var filteredYears = movies.filter(function(d){
+    var filterOutTV = movies.filter(function(d){
+        return !(d.contentRating.includes("TV"));
+    }); //we just want to look at movies
+
+    var filteredYears = filterOutTV.filter(function(d){
         if (year == "All") {return true;}
         return year == d.year;
     });
@@ -135,8 +212,8 @@ function updateChart(year, genre) {
         return d.genres.includes(genre);
     });
 
-    var maxLikes = d3.max(filteredYearAndGenres, function(d){ 
-        return d.movieLikes; 
+    var maxLikes = d3.max(filteredYearAndGenres, function(d){
+        return d.movieLikes;
     });
 
     xScale = d3.scaleLinear()
@@ -147,51 +224,72 @@ function updateChart(year, genre) {
     rScale.domain(rExtent);
 
     var xGrid = bubbleChart.append('g')
-        .attr('class', 'xGrid')
-        .attr('transform', 'translate('+[0, chartHeight]+')')
-        .call(d3.axisBottom(xScale).ticks(8)
-            .tickSizeInner(-chartHeight)
-            .tickFormat(d3.format("s")));
+         .attr('class', 'xGrid')
+         .attr('transform', 'translate('+[0, chartHeight]+')')
+         .call(d3.axisBottom(xScale).ticks(8)
+             .tickSizeInner(-chartHeight)
+             .tickFormat(d3.format("s")));
 
-    var yGrid = bubbleChart.append('g')
-    .attr('class', 'yGrid')
-        .call(d3.axisLeft(yScale).ticks(10)
-        .tickSizeInner(-chartWidth+padding.l)
-        .tickFormat(d3.format(".1f")));
+     var yGrid = bubbleChart.append('g')
+        .attr('class', 'yGrid')
+         .call(d3.axisLeft(yScale).ticks(10)
+         .tickSizeInner(-chartWidth+padding.l)
+         .tickFormat(d3.format(".1f")));
 
     var bChart = bubbleChart.selectAll('.bChart')
         .data(filteredYearAndGenres, function(d) { return d.movieTitle});
 
     var bChartEnter = bChart.enter()
         .append('g')
-        .attr('class', 'bChart');
+        .attr('class', 'bChart')
+        .on('mouseover', function(d){
+            console.log(d.movieTitle);
+            var hoveredMatch = svg.selectAll('.bData')
+            .classed('hovered', function(i) {
+                return (d.movieTitle == i.movieTitle);
+            });
+        })
+        .on('mouseout', function(d){
+            var hoverMatched = svg.selectAll('.bData')
+            .classed('hovered', function(i) {
+                return false;
+            });
+        });
+
+
+    var bData = bubbleChart.selectAll('.bData')
+        .data(movies); //has to be movies not filtered, else data will show only 2010
+
+    var bDataEnter = bData.enter()
+        .append('g')
+        .attr('class', 'bData')
+        .attr('transform','translate(' + (chartWidth+50) + ',' + (chartHeight/4)+')');
+
 
     bChart.merge(bChartEnter)
+        .transition()
+        .duration(600)
         .attr('transform', function(d){
-            if (d.movieLikes > 300000) {
-                console.log(d.movieTitle);
-            }
             return 'translate(' +(xScale(d.movieLikes))+ ', ' + (yScale(d.imdbScore)) + ')'; // Update position based on index
         });
 
     bChartEnter.append('circle')
+        .transition()
+        .duration(600)
         .attr('r', function(d) {
             return rScale(d.gross);
         })
         .style('fill', function(d){
-            if (d.contentRating.includes("TV")) {
-                console.log(d.contentRating);
-                return '#b42695';
-            } else if (d.contentRating === "G") {
-                return '#ccff99';
-            } else if (d.contentRating === "PG") {
+            if (d.contentRating === "G") {
                 return '#00ff00';
-            } else if (d.contentRating === "PG-13") {
+            } else if (d.contentRating === "PG") {
                 return '#ffff66';
+            } else if (d.contentRating === "PG-13") {
+                return '#ec973c';
             } else if (d.contentRating === "R") {
                 return '#ff0000';
             } else if (d.contentRating === "Unrated") {
-                return '#daf2ea';
+                return '#b42695';
             } else if (d.contentRating === "Not Rated") {
                 return '#232323';
             } else {
@@ -204,8 +302,37 @@ function updateChart(year, genre) {
         .text(function(d){
                 return d.movieTitle;
             });
+
+    var spacing = 18;
+    bDataEnter.append('text').attr('transform','translate(0,0)').text(function(d,i){
+        return d.movieTitle + '(' + d.year + ')';}
+        ).style('font-weight','bold');
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 1)+')').text(function(d){ return 'Director: ' + d.directorName;});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 2)+')').text(function(d){ return 'Stars: ' + d.actor1 + ','});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 3)+')').text(function(d){ return  d.actor2 + ', ' + d.actor3;});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 4)+')').text(function(d){ return 'Gross: $' + d.gross;});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 5)+')').text(function(d){ return 'Budget: $' + d.budget;});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 6)+')').text(function(d){ return 'Content Rating: ' + d.contentRating;}).style('fill', function(d) { return getContentColor(d.contentRating); });
+    bDataEnter.append('svg:image')
+        .attr('class', 'image')
+        .attr('transform','translate(-100,'+(spacing * 7)+')')
+        .attr('width', 200)
+        .attr('height', 240)
+        .attr("xlink:href", "https://images-na.ssl-images-amazon.com/images/M/MV5BMjIxMjgxNTk0MF5BMl5BanBnXkFtZTgwNjIyOTg2MDE@._V1_SY1000_CR0,0,674,1000_AL_.jpg")
     bChart.exit().remove();
+    bData.exit().remove();
 }
+
+
+function getContentColor(rating) {
+    for (i in contentRatingArr) {
+        if (rating == contentRatingArr[i][0]) {
+            return contentRatingArr[i][1];
+        }
+    }
+}
+
+
 
 function makeHistogram() {
     var hScale = d3.scaleLinear().domain(domains['imdb']).range([histogramHeight, 0]);
@@ -238,6 +365,8 @@ function makeHistogram() {
         .attr('class', 'bin')
 
     binContainer.merge(binContainerEnter)
+        .transition()
+        .duration(600)
         .attr('transform', function(d) {
             return 'translate(' +[0, hScale(d['x0'])]+ ')';
         });
@@ -257,5 +386,5 @@ function makeHistogram() {
         .attr('x', function(d, i) {
             return xScale(i)+1.5;
         })
-            
+
 }
