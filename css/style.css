@@ -49,10 +49,10 @@
     visibility: visible;
 }
 
-.bData image {
-    visibility: hidden;
+/*.bData image {
+    visibility: visible;
 }
 
 .bData.hovered image {
     visibility: visible;
-}
+}*/

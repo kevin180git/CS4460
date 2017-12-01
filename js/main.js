@@ -16,6 +16,8 @@ function onGenreChanged() {
     // Update chart with the selected category of letters
     updateChart(selectedYear, selectedGenre);
 }
+var imgDict = {};
+var flag = true;
 
 var svg = d3.select('svg');
 
@@ -40,9 +42,9 @@ var histogramChart = svg.append('g')
     .attr('class', 'histogram')
     .attr('transform', 'translate('+[chartWidth + padding.l + 200, padding.t]+')');
 
-var legendColors = ['#00ff00','#ffff66','#ec973c','#ff0000','#b42695', '#232323'];
+var legendColors = ['#00ff00','#0d66ba','#ec973c','#ff0000','#b42695', '#232323'];
 var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
-var contentRatingArr = [['G','#00ff00'],['PG','#ffff66'],['PG-13','#ec973c'],['R','#ff0000'],['Unrated','#b42695'],['Not Rated','#232323']];
+var contentRatingArr = [['G','#00ff00'],['PG','#0d66ba'],['PG-13','#ec973c'],['R','#ff0000'],['Unrated','#b42695'],['Not Rated','#232323']];
 
 var genres = [];
 
@@ -100,14 +102,32 @@ d3.csv('./data/movies.csv',
             .key(function(d) { return d.movieTitle})
             .entries(dataset);
 
-
         updateChart(selectedYear,selectedGenre);
         getAllGenres(dataset);
         makeHistogram();
         addLegend(legendColors, legendWords);
-        //updateChartG("All Genres");
 
     });
+
+function loadDoc(movieTitle,link) {
+    const proxyurl = "https://cors-anywhere.herokuapp.com/";
+    const url = link;
+    return fetch(proxyurl + url)
+    .then(response => response.text())
+    .then(function(contents) {
+        var outerDummy = $( contents );
+        var jQuerySelector = $('.poster a img', outerDummy)
+        var imgUrl = jQuerySelector.attr('src');
+        var randomname = new Image(imgUrl); //cache image?
+        imgDict[movieTitle] = imgUrl;
+
+        return imgUrl;
+
+
+    })
+    .catch(() => console.log("Can’t access " + url + " response. Blocked by browser?"))
+
+}
 
 function addLegend(legendColors, legendWords) {
     var legend = bubbleChart.selectAll('.legend')
@@ -236,6 +256,7 @@ function updateChart(year, genre) {
          .tickSizeInner(-chartWidth+padding.l)
          .tickFormat(d3.format(".1f")));
 
+
     var bChart = bubbleChart.selectAll('.bChart')
         .data(filteredYearAndGenres, function(d) { return d.movieTitle});
 
@@ -243,19 +264,43 @@ function updateChart(year, genre) {
         .append('g')
         .attr('class', 'bChart')
         .on('mouseover', function(d){
-            console.log(d.movieTitle);
+            //flag = true;
+            console.log(flag);
+
+            bubbleChart.selectAll('image').remove();
+            flag = true;
+                loadDoc(d.movieTitle, d.imdbLink).then((ans) => {
+                bubbleChart.append('svg:image')
+                .attr('class', 'image')
+                .attr('transform','translate(' + (chartWidth-50) + ','+chartHeight/2+')')
+                .attr('width', 200)
+                .attr('height', 240)
+                .attr("xlink:href", function(d) {
+                    if (flag == true) {
+                        return ans;
+                    }
+                });
+            });
+
+
+
             var hoveredMatch = svg.selectAll('.bData')
             .classed('hovered', function(i) {
                 return (d.movieTitle == i.movieTitle);
             });
+
+
         })
         .on('mouseout', function(d){
+            flag = false;
             var hoverMatched = svg.selectAll('.bData')
             .classed('hovered', function(i) {
                 return false;
             });
-        });
 
+            bubbleChart.selectAll('image').remove();
+
+        });
 
     var bData = bubbleChart.selectAll('.bData')
         .data(movies); //has to be movies not filtered, else data will show only 2010
@@ -283,7 +328,7 @@ function updateChart(year, genre) {
             if (d.contentRating === "G") {
                 return '#00ff00';
             } else if (d.contentRating === "PG") {
-                return '#ffff66';
+                return '#0d66ba';
             } else if (d.contentRating === "PG-13") {
                 return '#ec973c';
             } else if (d.contentRating === "R") {
@@ -313,12 +358,14 @@ function updateChart(year, genre) {
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 4)+')').text(function(d){ return 'Gross: $' + d.gross;});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 5)+')').text(function(d){ return 'Budget: $' + d.budget;});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 6)+')').text(function(d){ return 'Content Rating: ' + d.contentRating;}).style('fill', function(d) { return getContentColor(d.contentRating); });
-    bDataEnter.append('svg:image')
-        .attr('class', 'image')
-        .attr('transform','translate(-100,'+(spacing * 7)+')')
-        .attr('width', 200)
-        .attr('height', 240)
-        .attr("xlink:href", "https://images-na.ssl-images-amazon.com/images/M/MV5BMjIxMjgxNTk0MF5BMl5BanBnXkFtZTgwNjIyOTg2MDE@._V1_SY1000_CR0,0,674,1000_AL_.jpg")
+    // bDataEnter.append('svg:image')
+    //     .attr('class', 'image')
+    //     .attr('transform','translate(-100,'+(spacing * 7)+')')
+    //     .attr('width', 200)
+    //     .attr('height', 240)
+    //     .attr("xlink:href", function(d) {
+    //         return loadDoc(d.imdbLink);
+    //     })
     bChart.exit().remove();
     bData.exit().remove();
 }
