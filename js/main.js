@@ -16,6 +16,64 @@ function onGenreChanged() {
     // Update chart with the selected category of letters
     updateChart(selectedYear, selectedGenre);
 }
+
+var xAttributes = ['budget', 'duration', 'directFbLikes', 'castTotalLikes'];
+
+function Cell(x, y, attr) {
+    this.x = x;
+    this.y = y;
+}
+
+Cell.prototype.init = function(g) {
+    var cell = d3.select(g);
+
+    xScale.range([0, trellisWidth]).domain(extentMap[this.x]);
+
+    var xAxis = cell.append('g')
+        .attr('class', 'trellis axis x')
+        .attr('transform', 'translate(' +[0, trellisHeight]+ ')')
+        .call(d3.axisBottom(xScale));
+
+     var yAxis = cell.append('g')
+        .attr('class', 'trellis axis y')
+        .call(d3.axisLeft(grossScale).tickFormat(d3.format(".2s")));
+
+}
+
+Cell.prototype.update = function(g) {
+    var cell = d3.select(g);
+
+    var _this = this;
+    var attribute = this.x;
+    var gross = this.y;
+
+    var dots = cell.selectAll('.dot')
+        .data(movies);
+
+    var dotsEnter = dots.enter()
+        .append('circle')
+        .attr('class', 'dot')
+        .attr('r', 2);
+
+    dots.merge(dotsEnter)
+        .attr('cx', function(d) {
+            
+            return xScale(d[attribute]);
+        })
+        .attr('cy', function(d) {
+            return grossScale(d[gross]);
+        })
+
+
+}
+
+var cells = [];
+xAttributes.forEach(function(attr) {
+    cells.push(new Cell(attr, 'gross'));
+})
+
+
+
 var imgDict = {};
 var flag = true;
 
@@ -24,13 +82,16 @@ var svg = d3.select('svg');
 var svgWidth = +svg.attr('width');
 var svgHeight = +svg.attr('height');
 
-var padding = {t: 50, r: 40, b: 40, l: 60};
+var padding = {t: 50, r: 80, b: 40, l: 60};
 
 var chartWidth = svgWidth/2;
-var chartHeight = svgHeight - padding.t - padding.b;
+var chartHeight = 650 - padding.t - padding.b;
 
 var histogramWidth = chartWidth - padding.l;
 var histogramHeight = chartHeight;
+
+var trellisWidth = svgWidth/5;
+var trellisHeight = svgHeight/4;
 
 var domains = { 'imdb' : [0.0, 10.0] };
 
@@ -42,6 +103,10 @@ var histogramChart = svg.append('g')
     .attr('class', 'histogram')
     .attr('transform', 'translate('+[chartWidth + padding.l + 200, padding.t]+')');
 
+var trellis = svg.append('g')
+    .attr('class', 'trellis')
+    .attr('transform', 'translate('+[padding.l, chartHeight+padding.r + padding.t]+')');
+
 var legendColors = ['#00ff00','#0d66ba','#ec973c','#ff0000','#b42695', '#232323'];
 var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
 var contentRatingArr = [['G','#00ff00'],['PG','#0d66ba'],['PG-13','#ec973c'],['R','#ff0000'],['Unrated','#b42695'],['Not Rated','#232323']];
@@ -51,6 +116,7 @@ var genres = [];
 var xScale;
 var yScale = d3.scaleLinear().range([chartHeight,0]).domain(domains['imdb']);
 var rScale = d3.scaleSqrt().range([0,40]);
+var grossScale = d3.scaleLinear().range([trellisHeight, 0])
 
 d3.csv('./data/movies.csv',
     function(d){
@@ -98,14 +164,28 @@ d3.csv('./data/movies.csv',
         //Global
         movies = dataset
 
+        grossExtent = d3.extent(dataset, function(d){ return d.gross; });
+        budgetExtent = d3.extent(dataset, function(d) { return d.budget; });
+        maxDirectorLikes = d3.max(dataset, function(d) { return d.directFbLikes; });
+        maxCastLikes = d3.max(dataset, function(d) { return d.castTotalLikes; });
+        maxDuration = d3.max(dataset, function(d) { return d.duration; });
+
+        extentMap = { 'budget' : budgetExtent,
+                      'duration' : [0, maxDuration],
+                      'directFbLikes' : [0, maxDirectorLikes],
+                      'castTotalLikes' : [0, maxCastLikes] }
+
+        grossScale.domain(grossExtent);
+
         nestByMovieTitle = d3.nest()
             .key(function(d) { return d.movieTitle})
             .entries(dataset);
 
-        updateChart(selectedYear,selectedGenre);
+        updateChart(selectedYear, selectedGenre);
         getAllGenres(dataset);
         makeHistogram();
         addLegend(legendColors, legendWords);
+        makeTrellis();
 
     });
 
@@ -240,8 +320,7 @@ function updateChart(year, genre) {
         .domain([0, maxLikes*1.2])
         .range([0, chartWidth-padding.l]);
 
-    var rExtent = d3.extent(movies, function(d){ return d.gross; });
-    rScale.domain(rExtent);
+    rScale.domain(grossExtent);
 
     var xGrid = bubbleChart.append('g')
          .attr('class', 'xGrid')
@@ -434,4 +513,23 @@ function makeHistogram() {
             return xScale(i)+1.5;
         })
 
+}
+
+
+function makeTrellis() {
+
+     var charts = trellis.selectAll('.cell')
+        .data(cells)
+        .enter()
+        .append('g')
+        .attr('class', 'cell')
+        .attr("transform", function(d, i) {
+            return 'translate(' +[1.2 * trellisWidth * i]+ ')';
+        });
+
+    charts.each(function(cell) {
+        cell.init(this);
+        cell.update(this);
+    })
+   
 }
