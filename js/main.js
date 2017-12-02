@@ -72,13 +72,6 @@ var trellis = svg.append('g')
     .attr('class', 'trellis')
     .attr('transform', 'translate('+[padding.l, chartHeight+padding.l*1.85-15]+')');
 
-var descriptionBox = svg.append('g')
-    .attr('class', 'description')
-    .attr('transform', 'translate('+[chartWidth+30, padding.t]+')');
-
-descriptionBox.append('rect')
-    .attr('width', descriptionWidth)
-    .attr('height', descriptionHeight)
 
 /*bubbleChart.append('rect')
     .attr('width', chartWidth-10)
@@ -456,7 +449,7 @@ function updateChart(year, genre, text) {
     var bDataEnter = bData.enter()
         .append('g')
         .attr('class', 'bData')
-        .attr('transform','translate(' + (chartWidth+50) + ',' + (chartHeight/4)+')');
+        .attr('transform','translate(' +[chartWidth+30, padding.t]+ ')');
 
 
     bChart.merge(bChartEnter)
