@@ -29,66 +29,6 @@ function onGenreChanged() {
 
 var xAttributes = ['budget', 'duration', 'directFbLikes', 'castTotalLikes'];
 
-function Cell(x, y, attr) {
-    this.x = x;
-    this.y = y;
-}
-
-Cell.prototype.init = function(g) {
-    var cell = d3.select(g);
-
-    xScale.range([0, trellisWidth]).domain(extentMap[this.x]);
-
-    var xAxis = cell.append('g')
-        .attr('class', 'trellis axis x')
-        .attr('transform', 'translate(' +[0, trellisHeight]+ ')')
-        .call(d3.axisBottom(xScale));
-
-    var yAxis = cell.append('g')
-        .attr('class', 'trellis axis y')
-        .call(d3.axisLeft(grossScale).tickFormat(d3.format(".2s")));
-
-
-
-}
-
-Cell.prototype.update = function(g, dataset) {
-    var cell = d3.select(g);
-
-    var _this = this;
-    var attribute = this.x;
-    var gross = this.y;
-
-    var dots = cell.selectAll('.dot')
-        .data(dataset);
-
-    console.log(dataset)
-
-    var dotsEnter = dots.enter()
-        .append('circle')
-        .attr('class', 'dot')
-        .attr('r', 2);
-
-    dots.merge(dotsEnter)
-        .transition()
-        .duration(600)
-        .attr('cx', function(d) {
-
-            return xScale(d[attribute]);
-        })
-        .attr('cy', function(d) {
-            return grossScale(d[gross]);
-        })
-
-    dots.exit().remove()
-
-}
-
-var cells = [];
-xAttributes.forEach(function(attr) {
-    cells.push(new Cell(attr, 'gross'));
-})
-
 var yAxisMap = { 'budget' : 'Budget ($)',
                  'duration' : 'Duration (min)',
                  'directFbLikes' : 'Director Facebook Likes',
@@ -107,7 +47,7 @@ var svgHeight = +svg.attr('height');
 var padding = {t: 50, r: 80, b: 40, l: 80};
 
 var chartWidth = svgWidth/2;
-var chartHeight = 400 - padding.t - padding.b;
+var chartHeight = 420 - padding.t - padding.b;
 
 var histogramWidth = chartWidth - padding.l;
 var histogramHeight = chartHeight;
@@ -127,7 +67,19 @@ var histogramChart = svg.append('g')
 
 var trellis = svg.append('g')
     .attr('class', 'trellis')
-    .attr('transform', 'translate('+[padding.l, chartHeight+padding.l*1.85]+')');
+    .attr('transform', 'translate('+[padding.l, chartHeight+padding.l*1.85-15]+')');
+
+bubbleChart.append('rect')
+    .attr('width', chartWidth-10)
+    .attr('height', chartHeight+50)
+    .attr('transform', 'translate(' +[-60, -10]+ ')')
+    .style('fill', 'whitesmoke')
+
+trellis.append('rect')
+    .attr('width', svgWidth-30)
+    .attr('height', trellisHeight+50)
+    .attr('transform', 'translate(' +[-60, -10]+ ')')
+    .style('fill', 'whitesmoke')
 
 var legendColors = ['#00ff00','#0d66ba','#ec973c','#ff0000','#b42695', '#232323'];
 var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
@@ -207,7 +159,7 @@ d3.csv('./data/movies.csv',
             .entries(dataset);
 
         bubbleChart.append('text')
-            .attr('class', 'bcyaxis')
+            .attr('class', 'bubblechart x axis')
             .attr('x', chartWidth/2)
             .attr('y', chartHeight + 30)
             .text('Movie Facebook Likes');
@@ -228,26 +180,25 @@ d3.csv('./data/movies.csv',
 
         bubbleChart.append('text')
             .attr('class', 'bubblechart title')
-            .attr('x', chartWidth/3 + 60)
+            .attr('x', -60)
             .attr('y', -15)
             .text('Bubble Chart Title');
 
         histogramChart.append('text')
             .attr('class', 'histogram title')
-            .attr('x', histogramWidth/4)
+            .attr('x', -20)
             .attr('y', -15)
             .text('Histogram Chart Title');
 
-        svg.append('text')
+        trellis.append('text')
             .attr('class', 'trellis title')
-            .attr('x', 60)
-            .attr('y', chartHeight + 130)
+            .attr('x', -60)
+            .attr('y', -15)
             .text('Trellis Plot Title');
 
         makeHistogram();
         updateChart(selectedYear, selectedGenre, '/');
-        getAllGenres(dataset);
-        addLegend(legendColors, legendWords);
+        getAllGenres(movies);
         makeTrellis(selectedYear, selectedGenre, '/');
 
     });
@@ -278,15 +229,15 @@ function addLegend(legendColors, legendWords) {
     .enter()
     .append('g')
     .attr('class', 'legend')
-    .attr('transform', 'translate('+[chartWidth - 250, chartHeight - 200]+')');
+    .attr('transform', 'translate('+[chartWidth - 200, chartHeight - 170]+')');
 
     legend.append('rect')
         .attr('x', 0)
         .attr('y', -30)
         .attr('height', 170)
         .attr('width', 110)
-        .style('fill', '#eee')
-        .style('opacity', '0.8');
+        .style('fill', 'white')
+        .style('opacity', '0.9');
 
     legend.append('text')
             .attr('x', 0)
@@ -380,7 +331,6 @@ function updateChart(year, genre, text) {
         });
         filtered = filteredYearAndGenres;
     }
-
 
     var dot = svg.selectAll('.block')
         .classed('filtered', function(d) {
@@ -530,6 +480,10 @@ function updateChart(year, genre, text) {
             }
         });
 
+
+    addLegend(legendColors, legendWords);
+
+
     bChartEnter.append('text')
         .attr('dy', '0.7em')
         .attr('transform', 'translate(' +[0, -20]+ ')')
@@ -590,7 +544,7 @@ function makeHistogram() {
 
     var yAxis = histogramChart.append('g')
         .attr('class', 'histogram y axis')
-        .call(d3.axisLeft(hScale));
+        .call(d3.axisLeft(hScale).ticks(20));
 
     var binContainer = histogramChart.selectAll('.bin')
         .data(bins);
@@ -645,7 +599,7 @@ function makeTrellis(year, genre, text) {
     }
 
     var charts = trellis.selectAll('.cell')
-        .data(cells)
+        .data(xAttributes)
         .enter()
         .append('g')
         .attr('class', 'cell')
@@ -712,7 +666,8 @@ function makeTrellis(year, genre, text) {
                 return grossScale(d['gross']);
             })
 
-        dots.exit().remove();
+        dots.exit().remove()
+        
 
         })
 

@@ -17,7 +17,7 @@
 
 .bChart text {
     font-size: 12px;
-    font-family: Verdana;
+    font-family: Arial;
     visibility: hidden;
     text-anchor: middle;
 }
@@ -30,16 +30,16 @@
 }
 
 #dropDown {
-    font-family: Verdana;
+    font-family: Arial;
 }
 
 .legend text {
-    font-family: Verdana;
+    font-family: Arial;
 }
 
 .bData text {
     font-size: 12px;
-    font-family: Verdana;
+    font-family: Arial;
     visibility: hidden;
     text-anchor: middle;
 }
@@ -65,49 +65,53 @@
     opacity: 0.1;
 }
 
-.bcxaxis {
-    text-anchor: middle;
-    font-family: Verdana;
+
+.bubblechart.x.axis {
+    text-anchor: end;
+    font-family: Arial;
     font-size: 14px;
 }
 
-.bcyaxis {
-    text-anchor: end;
-    font-family: Verdana;
+.bubblechart.y.axis {
+    text-anchor: start;
+    font-family: Arial;
     font-size: 14px;
 }
 
 .hcyaxis {
-    text-anchor: end;
-    font-family: Verdana;
+    text-anchor: start;
+    font-family: Arial;
     font-size: 14px;
 }
 
 .tpxaxis {
     text-anchor:  middle;
-    font-family: Verdana;
+    font-family: Arial;
     font-size: 12px;
 }
 .tpyaxis {
     text-anchor: middle;
-    font-family: Verdana;
+    font-family: Arial;
     font-size: 12px;
 }
 
-.title {
-    text-anchor: middle;
-    font-family: Verdana;
-    font-size: 20px;
-}
 .dot.hovered {
     fill: red;
 }
 
-.trellis.title {
-    font-size: 32px;
+.title {
+    font-family: Arial;
     text-anchor: start;
 }
 
-.bubblechart.x.axis {
-    text-anchor: end;
+.trellis.title {
+    font-size: 28px;
+}
+
+.bubblechart.title {
+    font-size: 30px;
+}
+
+.histogram.title {
+    font-size: 24px;
 }
