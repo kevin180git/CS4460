@@ -11,9 +11,9 @@
 }
 
 #searchbar {
-    position: absolute;
+    position: relative;
     left: 320px;
-    bottom: 5px;
+    bottom: 18px;
 }
 
 .bChart circle {
