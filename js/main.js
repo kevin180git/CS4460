@@ -34,6 +34,11 @@ var yAxisMap = { 'budget' : 'Budget ($)',
                  'directFbLikes' : 'Director Facebook Likes',
                  'castTotalLikes' : 'Cast Facebook Likes' }
 
+var trellisColor = { 'budget' : '#56d945',
+                 'duration' : '#3379eb',
+                 'directFbLikes' : '#eb3333',
+                 'castTotalLikes' : '#d9a745' }
+
 
 
 var imgDict = {};
@@ -85,9 +90,9 @@ var trellis = svg.append('g')
     .attr('transform', 'translate(' +[-60, -10]+ ')')
     .style('fill', 'whitesmoke')*/
 
-var legendColors = ['#00ff00','#0d66ba','#ec973c','#ff0000','#b42695', '#232323'];
+var legendColors = ['#00ff00','#29e6ff','#ec973c','#ff0000','#b42695', '#232323'];
 var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
-var contentRatingArr = [['G','#00ff00'],['PG','#0d66ba'],['PG-13','#ec973c'],['R','#ff0000'],['Unrated','#b42695'],['Not Rated','#232323']];
+var contentRatingArr = [['G','#00ff00'],['PG','#29e6ff'],['PG-13','#ec973c'],['R','#ff0000'],['Unrated','#b42695'],['Not Rated','#232323']];
 
 var genres = [];
 
@@ -192,13 +197,13 @@ d3.csv('./data/movies.csv',
             .attr('class', 'histogram title')
             .attr('x', -40)
             .attr('y', -15)
-            .text('Histogram Chart Title');
+            .text('Distribution of IMDb Score');
 
         trellis.append('text')
             .attr('class', 'trellis title')
             .attr('x', -60)
             .attr('y', -15)
-            .text('Trellis Plot Title');
+            .text('Attributes vs. Box Office');
 
         makeHistogram();
         updateChart(selectedYear, selectedGenre, '/');
@@ -469,7 +474,7 @@ function updateChart(year, genre, text) {
             if (d.contentRating === "G") {
                 return '#00ff00';
             } else if (d.contentRating === "PG") {
-                return '#0d66ba';
+                return '#29e6ff';
             } else if (d.contentRating === "PG-13") {
                 return '#ec973c';
             } else if (d.contentRating === "R") {
@@ -574,7 +579,7 @@ function makeHistogram() {
         .append('rect')
         .attr('class', 'block')
         .attr('width', 1.5)
-        .attr('height', 10)
+        .attr('height', 5)
         .attr('x', function(d, i) {
             return xScale(i)+1.5;
         })
@@ -658,7 +663,8 @@ function makeTrellis(year, genre, text) {
         var dotsEnter = dots.enter()
             .append('circle')
             .attr('class', 'dot')
-            .attr('r', 2.5);
+            .attr('r', 2.5)
+            .style('fill', trellisColor[attribute]);
 
         dots.merge(dotsEnter)
             .attr('cx', function(d) {
