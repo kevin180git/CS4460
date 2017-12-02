@@ -49,11 +49,14 @@ var padding = {t: 50, r: 80, b: 40, l: 80};
 var chartWidth = svgWidth/2;
 var chartHeight = 420 - padding.t - padding.b;
 
-var histogramWidth = chartWidth - padding.l;
+var histogramWidth = chartWidth - 1.8*padding.l;
 var histogramHeight = chartHeight;
 
 var trellisWidth = svgWidth/5;
 var trellisHeight = svgHeight/4;
+
+var descriptionWidth = svgWidth/5
+var descriptionHeight = chartHeight;
 
 var domains = { 'imdb' : [0.0, 10.0] };
 
@@ -63,23 +66,31 @@ var bubbleChart = svg.append('g')
 
 var histogramChart = svg.append('g')
     .attr('class', 'histogram')
-    .attr('transform', 'translate('+[chartWidth + padding.l + 200, padding.t]+')');
+    .attr('transform', 'translate('+[chartWidth + padding.l + 280, padding.t]+')');
 
 var trellis = svg.append('g')
     .attr('class', 'trellis')
     .attr('transform', 'translate('+[padding.l, chartHeight+padding.l*1.85-15]+')');
 
-bubbleChart.append('rect')
+var descriptionBox = svg.append('g')
+    .attr('class', 'description')
+    .attr('transform', 'translate('+[chartWidth+30, padding.t]+')');
+
+descriptionBox.append('rect')
+    .attr('width', descriptionWidth)
+    .attr('height', descriptionHeight)
+
+/*bubbleChart.append('rect')
     .attr('width', chartWidth-10)
     .attr('height', chartHeight+50)
     .attr('transform', 'translate(' +[-60, -10]+ ')')
-    .style('fill', 'whitesmoke')
+    .style('fill', 'whitesmoke')*/
 
-trellis.append('rect')
+/*trellis.append('rect')
     .attr('width', svgWidth-30)
     .attr('height', trellisHeight+50)
     .attr('transform', 'translate(' +[-60, -10]+ ')')
-    .style('fill', 'whitesmoke')
+    .style('fill', 'whitesmoke')*/
 
 var legendColors = ['#00ff00','#0d66ba','#ec973c','#ff0000','#b42695', '#232323'];
 var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
@@ -186,7 +197,7 @@ d3.csv('./data/movies.csv',
 
         histogramChart.append('text')
             .attr('class', 'histogram title')
-            .attr('x', -20)
+            .attr('x', -40)
             .attr('y', -15)
             .text('Histogram Chart Title');
 
@@ -236,8 +247,7 @@ function addLegend(legendColors, legendWords) {
         .attr('y', -30)
         .attr('height', 170)
         .attr('width', 110)
-        .style('fill', 'white')
-        .style('opacity', '0.9');
+        .style('fill', '#eee')
 
     legend.append('text')
             .attr('x', 0)
