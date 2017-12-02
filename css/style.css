@@ -99,3 +99,6 @@
     font-family: Verdana;
     font-size: 20px;
 }
+.dot.hovered {
+    fill: red;
+}

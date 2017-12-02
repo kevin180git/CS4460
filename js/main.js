@@ -407,22 +407,23 @@ function updateChart(year, genre, text) {
         return d.movieLikes;
     });
 
-    xScale.domain([0, maxLikes*1.2]).range([0, chartWidth-padding.l]);
+    xScale.domain([0, maxLikes*1.1]).range([0, chartWidth-padding.l]);
 
     rScale.domain(grossExtent);
 
+    svg.selectAll('.xGrid').remove();
     var xGrid = bubbleChart.append('g')
-         .attr('class', 'xGrid')
-         .attr('transform', 'translate('+[0, chartHeight]+')')
-         .call(d3.axisBottom(xScale).ticks(8)
-             .tickSizeInner(-chartHeight)
-             .tickFormat(d3.format(".1s")));
+        .attr('class', 'xGrid')
+        .attr('transform', 'translate('+[0, chartHeight]+')')
+        .call(d3.axisBottom(xScale)
+            .tickSizeInner(-chartHeight)
+            .tickFormat(d3.format(".2s")));
 
      var yGrid = bubbleChart.append('g')
         .attr('class', 'yGrid')
-         .call(d3.axisLeft(yScale).ticks(10)
-         .tickSizeInner(-chartWidth+padding.l)
-         .tickFormat(d3.format(".1f")));
+        .call(d3.axisLeft(yScale).ticks(20)
+        .tickSizeInner(-chartWidth+padding.l)
+        .tickFormat(d3.format(".1f")));
 
 
     var bChart = bubbleChart.selectAll('.bChart')
@@ -438,6 +439,9 @@ function updateChart(year, genre, text) {
             svg.selectAll('.dot')
                 .classed('hidden', function(v) {
                     return v != d;
+                })
+                .classed('hovered', function(v) {
+                    return v == d;
                 })
 
             bubbleChart.selectAll('image').remove();
@@ -455,8 +459,6 @@ function updateChart(year, genre, text) {
                 });
             });
 
-
-
             var hoveredMatch = svg.selectAll('.bData')
             .classed('hovered', function(i) {
                 return (d.movieTitle == i.movieTitle);
@@ -470,6 +472,14 @@ function updateChart(year, genre, text) {
             .classed('hovered', function(i) {
                 return false;
             });
+
+            svg.selectAll('.dot')
+                .classed('hidden', function(v) {
+                    return false;
+                })
+                .classed('hovered', function(v) {
+                    return false;
+                })
 
             bubbleChart.selectAll('image').remove();
 
@@ -659,7 +669,7 @@ function makeTrellis(year, genre, text) {
         var xAxis = cell.append('g')
             .attr('class', 'trellis axis x')
             .attr('transform', 'translate(' +[0, trellisHeight]+ ')')
-            .call(d3.axisBottom(xScale));
+            .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format(".2s")))
 
         var yAxis = cell.append('g')
             .attr('class', 'trellis axis y')
@@ -685,7 +695,7 @@ function makeTrellis(year, genre, text) {
         var dotsEnter = dots.enter()
             .append('circle')
             .attr('class', 'dot')
-            .attr('r', 2);
+            .attr('r', 2.5);
 
         dots.merge(dotsEnter)
             .transition()
