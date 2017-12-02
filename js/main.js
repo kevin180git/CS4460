@@ -583,6 +583,8 @@ function makeHistogram() {
 
 
 function makeTrellis(year, genre, text) {
+    svg.selectAll('.dot').remove();
+
     if(text != '/') {
         filtered = movies.filter(function(d) {
             var title = d['movieTitle'].toLowerCase();
@@ -659,8 +661,6 @@ function makeTrellis(year, genre, text) {
             .attr('r', 2.5);
 
         dots.merge(dotsEnter)
-            .transition()
-            .duration(600)
             .attr('cx', function(d) {
 
                 return xScale(d[attribute]);
