@@ -89,10 +89,10 @@ xAttributes.forEach(function(attr) {
     cells.push(new Cell(attr, 'gross'));
 })
 
-var yAxisMap = { 'budget' : 'Budget',
-                      'duration' : 'Duration',
-                      'directFbLikes' : 'Director\'s Facebook Likes',
-                      'castTotalLikes' : 'Cast Total Facebook Likes' }
+var yAxisMap = { 'budget' : 'Budget ($)',
+                 'duration' : 'Duration (min)',
+                 'directFbLikes' : 'Director Facebook Likes',
+                 'castTotalLikes' : 'Cast Facebook Likes' }
 
 
 
@@ -104,10 +104,10 @@ var svg = d3.select('svg');
 var svgWidth = +svg.attr('width');
 var svgHeight = +svg.attr('height');
 
-var padding = {t: 50, r: 80, b: 40, l: 60};
+var padding = {t: 50, r: 80, b: 40, l: 80};
 
 var chartWidth = svgWidth/2;
-var chartHeight = 650 - padding.t - padding.b;
+var chartHeight = 400 - padding.t - padding.b;
 
 var histogramWidth = chartWidth - padding.l;
 var histogramHeight = chartHeight;
@@ -118,7 +118,7 @@ var trellisHeight = svgHeight/4;
 var domains = { 'imdb' : [0.0, 10.0] };
 
 var bubbleChart = svg.append('g')
-    .attr('class', 'bubbleChart')
+    .attr('class', 'bubblechart')
     .attr('transform', 'translate('+[padding.l, padding.t]+')');
 
 var histogramChart = svg.append('g')
@@ -127,7 +127,7 @@ var histogramChart = svg.append('g')
 
 var trellis = svg.append('g')
     .attr('class', 'trellis')
-    .attr('transform', 'translate('+[padding.l, chartHeight+padding.r + padding.t]+')');
+    .attr('transform', 'translate('+[padding.l, chartHeight+padding.l*1.85]+')');
 
 var legendColors = ['#00ff00','#0d66ba','#ec973c','#ff0000','#b42695', '#232323'];
 var legendWords = ['G', 'PG','PG-13', 'R', 'Unrated', 'Not Rated'];
@@ -207,41 +207,41 @@ d3.csv('./data/movies.csv',
             .entries(dataset);
 
         bubbleChart.append('text')
-            .attr('class', 'bcxaxis')
-            .attr('x', chartWidth/2 - 50)
-            .attr('y', chartHeight + 25)
+            .attr('class', 'bcyaxis')
+            .attr('x', chartWidth/2)
+            .attr('y', chartHeight + 30)
             .text('Movie Facebook Likes');
 
         bubbleChart.append('text')
-            .attr('class', 'bcyaxis')
-            .attr('x', -10)
-            .attr('y', -25)
+            .attr('class', 'bubblechart y axis')
+            .attr('x', -chartHeight)
+            .attr('y', -30)
             .attr('transform', 'rotate(270)')
             .text('IMDb Score');
 
         histogramChart.append('text')
             .attr('class', 'hcyaxis')
-            .attr('x', -10)
-            .attr('y', -25)
+            .attr('x', -chartHeight)
+            .attr('y', -30)
             .attr('transform', 'rotate(270)')
             .text('IMDb Score');
 
         bubbleChart.append('text')
-            .attr('class', 'title')
+            .attr('class', 'bubblechart title')
             .attr('x', chartWidth/3 + 60)
             .attr('y', -15)
             .text('Bubble Chart Title');
 
         histogramChart.append('text')
-            .attr('class', 'title')
+            .attr('class', 'histogram title')
             .attr('x', histogramWidth/4)
             .attr('y', -15)
             .text('Histogram Chart Title');
 
         svg.append('text')
-            .attr('class', 'title')
-            .attr('x', chartWidth)
-            .attr('y', chartHeight + 100)
+            .attr('class', 'trellis title')
+            .attr('x', 60)
+            .attr('y', chartHeight + 130)
             .text('Trellis Plot Title');
 
         makeHistogram();
@@ -384,21 +384,26 @@ function updateChart(year, genre, text) {
 
     var dot = svg.selectAll('.block')
         .classed('filtered', function(d) {
-            var yearFilter;
-            var genreFilter;
-
-            if(year == "All") {
-                yearFilter = true;
+            if(text != '/') {
+                var title = d['movieTitle'].toLowerCase();
+                return title.includes(text.toLowerCase());
             } else {
-                yearFilter = year == d.year;
-            }
+                var yearFilter;
+                var genreFilter;
 
-            if (genre == "All Genres") {
-                genreFilter = true;
-            } else {
-                genreFilter = d.genres.includes(genre);
+                if(year == "All") {
+                    yearFilter = true;
+                } else {
+                    yearFilter = year == d.year;
+                }
+
+                if (genre == "All Genres") {
+                    genreFilter = true;
+                } else {
+                    genreFilter = d.genres.includes(genre);
+                }
+                return yearFilter && genreFilter;
             }
-            return yearFilter && genreFilter;
         })
 
 
@@ -527,19 +532,18 @@ function updateChart(year, genre, text) {
 
     bChartEnter.append('text')
         .attr('dy', '0.7em')
+        .attr('transform', 'translate(' +[0, -20]+ ')')
         .text(function(d){
                 return d.movieTitle;
             });
 
     var spacing = 18;
-    bDataEnter.append('text').attr('transform','translate(0,0)').text(function(d,i){
-        return d.movieTitle + '(' + d.year + ')';}
-        ).style('font-weight','bold');
+    bDataEnter.append('text').attr('transform','translate(0,0)').text(function(d,i){ return d.movieTitle + '(' + d.year + ')'; }).style('font-weight','bold').style('font-size', '1.2em');
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 1)+')').text(function(d){ return 'Director: ' + d.directorName;});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 2)+')').text(function(d){ return 'Stars: ' + d.actor1 + ','});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 3)+')').text(function(d){ return  d.actor2 + ', ' + d.actor3;});
-    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 4)+')').text(function(d){ return 'Gross: $' + d.gross;});
-    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 5)+')').text(function(d){ return 'Budget: $' + d.budget;});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 4)+')').text(function(d){ return 'Box Office: $' + d3.format(',')(d.gross);});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 5)+')').text(function(d){ return 'Budget: $' + d3.format(',')(d.budget);});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 6)+')').text(function(d){ return 'Duration: ' + d.duration + " mins";});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 7)+')').text(function(d){ return 'Content Rating: ' + d.contentRating;}).style('fill', function(d) { return getContentColor(d.contentRating); });
     // bDataEnter.append('svg:image')
@@ -677,15 +681,15 @@ function makeTrellis(year, genre, text) {
 
         cell.append('text')
             .attr('class', 'tpyaxis')
-            .attr('x', -trellisWidth/2)
+            .attr('x', -trellisHeight/2)
             .attr('y', -45)
             .attr('transform', 'rotate(270)')
-            .text('Gross');
+            .text('Box Office ($)');
 
         cell.append('text')
             .attr('class', 'tpxaxis')
             .attr('x', trellisWidth/2)
-            .attr('y', trellisHeight+ 40)
+            .attr('y', trellisHeight + 35)
             .text(yAxisMap[attribute]);
 
 

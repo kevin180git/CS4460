@@ -102,3 +102,12 @@
 .dot.hovered {
     fill: red;
 }
+
+.trellis.title {
+    font-size: 32px;
+    text-anchor: start;
+}
+
+.bubblechart.x.axis {
+    text-anchor: end;
+}
