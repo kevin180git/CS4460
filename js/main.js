@@ -186,7 +186,7 @@ d3.csv('./data/movies.csv',
             .attr('class', 'bubblechart title')
             .attr('x', -60)
             .attr('y', -15)
-            .text('Bubble Chart Title');
+            .text('IMDb Score vs. Movie Likes');
 
         histogramChart.append('text')
             .attr('class', 'histogram title')
@@ -407,9 +407,9 @@ function updateChart(year, genre, text) {
             loadDoc(d.movieTitle, d.imdbLink).then((ans) => {
                 bubbleChart.append('svg:image')
                 .attr('class', 'image')
-                .attr('transform','translate(' + (chartWidth-50) + ','+chartHeight/2+')')
-                .attr('width', 200)
-                .attr('height', 240)
+                .attr('transform','translate(' + (chartWidth) + ','+ (chartHeight/2 - 20)+')')
+                .attr('width', 160)
+                .attr('height', 190)
                 .attr("xlink:href", function(d) {
                     if (flag == true) {
                         return ans;
@@ -449,7 +449,7 @@ function updateChart(year, genre, text) {
     var bDataEnter = bData.enter()
         .append('g')
         .attr('class', 'bData')
-        .attr('transform','translate(' +[chartWidth+30, padding.t]+ ')');
+        .attr('transform','translate(' +[chartWidth+80, padding.t - 50]+ ')');
 
 
     bChart.merge(bChartEnter)
@@ -495,7 +495,7 @@ function updateChart(year, genre, text) {
             });
 
     var spacing = 18;
-    bDataEnter.append('text').attr('transform','translate(0,0)').text(function(d,i){ return d.movieTitle + '(' + d.year + ')'; }).style('font-weight','bold').style('font-size', '1.2em');
+    bDataEnter.append('text').attr('transform','translate(0,0)').text(function(d,i){ return d.movieTitle + '(' + d.year + ')'; }).style('font-weight','bold').style('font-size', '1em');
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 1)+')').text(function(d){ return 'Director: ' + d.directorName;});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 2)+')').text(function(d){ return 'Stars: ' + d.actor1 + ','});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 3)+')').text(function(d){ return  d.actor2 + ', ' + d.actor3;});
@@ -670,7 +670,7 @@ function makeTrellis(year, genre, text) {
             })
 
         dots.exit().remove()
-        
+
 
         })
 
