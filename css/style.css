@@ -62,5 +62,40 @@
 }
 
 .dot.hidden {
-    opacity: 0.1; 
+    opacity: 0.1;
+}
+
+.bcxaxis {
+    text-anchor: middle;
+    font-family: Verdana;
+    font-size: 14px;
+}
+
+.bcyaxis {
+    text-anchor: end;
+    font-family: Verdana;
+    font-size: 14px;
+}
+
+.hcyaxis {
+    text-anchor: end;
+    font-family: Verdana;
+    font-size: 14px;
+}
+
+.tpxaxis {
+    text-anchor:  middle;
+    font-family: Verdana;
+    font-size: 12px;
+}
+.tpyaxis {
+    text-anchor: middle;
+    font-family: Verdana;
+    font-size: 12px;
+}
+
+.title {
+    text-anchor: middle;
+    font-family: Verdana;
+    font-size: 20px;
 }

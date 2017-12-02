@@ -4,13 +4,13 @@ selectedGenre = "All Genres";
 function search(){
     var text = d3.select('#searchInput').node().value;
     updateChart(selectedYear, selectedGenre, text);
-    makeTrellis(selectedYear, selectedGenre, text);   
+    makeTrellis(selectedYear, selectedGenre, text);
 }
 
 function clearSearch() {
     d3.select('#searchInput').node().value = "";
     updateChart(selectedYear, selectedGenre, '/');
-    makeTrellis(selectedYear, selectedGenre, '/');  
+    makeTrellis(selectedYear, selectedGenre, '/');
 }
 
 function onYearChanged() {
@@ -48,6 +48,8 @@ Cell.prototype.init = function(g) {
         .attr('class', 'trellis axis y')
         .call(d3.axisLeft(grossScale).tickFormat(d3.format(".2s")));
 
+
+
 }
 
 Cell.prototype.update = function(g, dataset) {
@@ -71,7 +73,7 @@ Cell.prototype.update = function(g, dataset) {
         .transition()
         .duration(600)
         .attr('cx', function(d) {
-            
+
             return xScale(d[attribute]);
         })
         .attr('cy', function(d) {
@@ -86,6 +88,11 @@ var cells = [];
 xAttributes.forEach(function(attr) {
     cells.push(new Cell(attr, 'gross'));
 })
+
+var yAxisMap = { 'budget' : 'Budget',
+                      'duration' : 'Duration',
+                      'directFbLikes' : 'Director\'s Facebook Likes',
+                      'castTotalLikes' : 'Cast Total Facebook Likes' }
 
 
 
@@ -111,7 +118,7 @@ var trellisHeight = svgHeight/4;
 var domains = { 'imdb' : [0.0, 10.0] };
 
 var bubbleChart = svg.append('g')
-    .attr('class', 'bubblechart')
+    .attr('class', 'bubbleChart')
     .attr('transform', 'translate('+[padding.l, padding.t]+')');
 
 var histogramChart = svg.append('g')
@@ -198,6 +205,44 @@ d3.csv('./data/movies.csv',
         nestByMovieTitle = d3.nest()
             .key(function(d) { return d.movieTitle})
             .entries(dataset);
+
+        bubbleChart.append('text')
+            .attr('class', 'bcxaxis')
+            .attr('x', chartWidth/2 - 50)
+            .attr('y', chartHeight + 25)
+            .text('Movie Facebook Likes');
+
+        bubbleChart.append('text')
+            .attr('class', 'bcyaxis')
+            .attr('x', -10)
+            .attr('y', -25)
+            .attr('transform', 'rotate(270)')
+            .text('IMDb Score');
+
+        histogramChart.append('text')
+            .attr('class', 'hcyaxis')
+            .attr('x', -10)
+            .attr('y', -25)
+            .attr('transform', 'rotate(270)')
+            .text('IMDb Score');
+
+        bubbleChart.append('text')
+            .attr('class', 'title')
+            .attr('x', chartWidth/3 + 60)
+            .attr('y', -15)
+            .text('Bubble Chart Title');
+
+        histogramChart.append('text')
+            .attr('class', 'title')
+            .attr('x', histogramWidth/4)
+            .attr('y', -15)
+            .text('Histogram Chart Title');
+
+        svg.append('text')
+            .attr('class', 'title')
+            .attr('x', chartWidth)
+            .attr('y', chartHeight + 100)
+            .text('Trellis Plot Title');
 
         makeHistogram();
         updateChart(selectedYear, selectedGenre, '/');
@@ -335,7 +380,7 @@ function updateChart(year, genre, text) {
         });
         filtered = filteredYearAndGenres;
     }
-   
+
 
     var dot = svg.selectAll('.block')
         .classed('filtered', function(d) {
@@ -356,7 +401,7 @@ function updateChart(year, genre, text) {
             return yearFilter && genreFilter;
         })
 
-    
+
 
     var maxLikes = d3.max(filtered, function(d){
         return d.movieLikes;
@@ -371,7 +416,7 @@ function updateChart(year, genre, text) {
          .attr('transform', 'translate('+[0, chartHeight]+')')
          .call(d3.axisBottom(xScale).ticks(8)
              .tickSizeInner(-chartHeight)
-             .tickFormat(d3.format("s")));
+             .tickFormat(d3.format(".1s")));
 
      var yGrid = bubbleChart.append('g')
         .attr('class', 'yGrid')
@@ -485,7 +530,8 @@ function updateChart(year, genre, text) {
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 3)+')').text(function(d){ return  d.actor2 + ', ' + d.actor3;});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 4)+')').text(function(d){ return 'Gross: $' + d.gross;});
     bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 5)+')').text(function(d){ return 'Budget: $' + d.budget;});
-    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 6)+')').text(function(d){ return 'Content Rating: ' + d.contentRating;}).style('fill', function(d) { return getContentColor(d.contentRating); });
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 6)+')').text(function(d){ return 'Duration: ' + d.duration + " mins";});
+    bDataEnter.append('text').attr('transform','translate(0,'+(spacing * 7)+')').text(function(d){ return 'Content Rating: ' + d.contentRating;}).style('fill', function(d) { return getContentColor(d.contentRating); });
     // bDataEnter.append('svg:image')
     //     .attr('class', 'image')
     //     .attr('transform','translate(-100,'+(spacing * 7)+')')
@@ -619,6 +665,20 @@ function makeTrellis(year, genre, text) {
             .attr('class', 'trellis axis y')
             .call(d3.axisLeft(grossScale).tickFormat(d3.format(".2s")));
 
+        cell.append('text')
+            .attr('class', 'tpyaxis')
+            .attr('x', -trellisWidth/2)
+            .attr('y', -45)
+            .attr('transform', 'rotate(270)')
+            .text('Gross');
+
+        cell.append('text')
+            .attr('class', 'tpxaxis')
+            .attr('x', trellisWidth/2)
+            .attr('y', trellisHeight+ 40)
+            .text(yAxisMap[attribute]);
+
+
         var dots = cell.selectAll('.dot')
             .data(filtered);
 
@@ -631,7 +691,7 @@ function makeTrellis(year, genre, text) {
             .transition()
             .duration(600)
             .attr('cx', function(d) {
-                
+
                 return xScale(d[attribute]);
             })
             .attr('cy', function(d) {
@@ -648,5 +708,5 @@ function makeTrellis(year, genre, text) {
         cell.init(this);
         cell.update(this, filteredYearAndGenres);
     })*/
-   
+
 }
